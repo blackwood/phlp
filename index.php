@@ -5,9 +5,29 @@ $txt = <<<EOT
 EOT;
 var_dump($txt);
 
+function array_args_and_function_builtin_or_defined($fn, $args) {
+	return $fn && array_filter($args, 'is_array') === $args || $fn === 'def';
+}
+
 class Native {
 	
-	public $defined = array();
+	public static $def = array();
+
+	public function def($name, $value) {
+		self::$def[$name] = $value;
+	}
+
+	public function getdef() { 
+		return self::$def;
+	}
+
+	public function funcs() {
+		return array(
+			'=' => function($a, $b) {
+				return $a === $b;
+			}
+		);
+	}
 
 	public function reducers() {
 		return array(
@@ -16,14 +36,17 @@ class Native {
 				return $a;
 			},
 			'-' => function($a, $b) {
+				if ($a === null) return $b;
 				$a -= $b;
 				return $a;
 			},
 			'*' => function($a, $b) {
+				if ($a === null) $a = 1;
 				$a *= $b;
 				return $a;
 			},
 			'/' => function($a, $b) {
+				if ($a === null) return $b;
 				$a /= $b;
 				return $a;
 			},
@@ -32,6 +55,7 @@ class Native {
 				return $z;
 			},
 			'%' => function($a, $b) {
+				if ($a === null) return $b;
 				$a %= $b;
 				return $a;
 			}
@@ -41,14 +65,19 @@ class Native {
 }
 
 function def($name, $value) {
-
+	Native::def($name, $value);
 }
 
 function lisp($expression) {
 
 	$reducers = Native::reducers();
 
-	if (function_exists($expression[0]) || array_key_exists($expression[0], $reducers)) {
+	$funcs = Native::funcs();
+
+	if (is_string($expression[0]) && // short circuit if not string.
+		(function_exists($expression[0]) || 
+			array_key_exists($expression[0], $reducers) ||
+			array_key_exists($expression[0], $funcs))) {
 		$fn = $expression[0];
 	}
 
@@ -60,14 +89,22 @@ function lisp($expression) {
 		if (is_array($arg)) {
 			return lisp($arg);
 		} else {
-			return $arg;
+			if (array_key_exists($arg, Native::getdef()) && $dfs = Native::getdef()) {
+				return $dfs[$arg];
+			} else {
+				return $arg;
+			}
 		}
 	}, array_slice($expression, count($fn))); // get the remaining args.
 
 	if (array_key_exists($fn, $reducers)) {
 		return array_reduce($args, $reducers[$fn]);
 	}
-  elseif ($fn && array_filter($args, 'is_array') === $args) {
+	elseif (array_key_exists($fn, $funcs)) {
+		return call_user_func_array($funcs[$fn], $args);
+	}
+  elseif (
+  	array_args_and_function_builtin_or_defined($fn, $args)) {
   	return call_user_func_array($fn, $args);
   }
 	elseif ($fn) {
@@ -80,6 +117,19 @@ function lisp($expression) {
 
 }
 
-// lisp(['var_dump', ['+', 1, 2, 3, 4], ['.', 'foo', 'bar', 'baz']]);
+// Concatenation
+// lisp(['var_dump', 
+// 	['.', 'foo', 'bar', 'baz']]);
+
+// Nested functions and array "sequences"
 // lisp(['var_dump', 'foo',[2,3,4], ['array_merge',[['+',9,10],2],[4,5,6]]]);
 // lisp(['var_dump', ['array_merge',[2],['array_merge',[3],[4]]]]);
+
+// Multiplication, division, modulo, subtraction.
+// lisp(['var_dump', ['def', 'a', 4],
+// 	// ['+', 'a', 'a'],['*', 4, 4],
+// 	['=', ['/', 16, 'a'], 4],
+// 	['=', ['*', 2, 'a'], 8],
+// 	['=', ['-', 2, 'a'], -2],
+// 	['=', ['%', 17, 'a'], 1]]);
+
