@@ -40,6 +40,9 @@ class Native {
 			'if' => function($condition, $success, $failure) {
 				$passed = lisp($condition);
 				return lisp($passed ? $success : $failure);
+			},
+			'def' => function() {
+				var_dump("foo");
 			}
 		);
 	}
@@ -172,3 +175,7 @@ function lisp($expression) {
 // 	['var_dump','yep'],
 // 	['var_dump','nope']]);
 
+lisp(['def', 'shout',
+  		['fn', ['name', 'planet'],
+    	['puts', 'planet', 'name']]],
+    	['shout', 'hello', 'world']);
