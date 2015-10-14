@@ -59,3 +59,15 @@ The syntax ends up looking like this:
 
 ]);
 ```
+
+### Running it
+
+Right now, not using composer or anything like that, so you have to simply pass the filename you want to interpret in as an argument. 
+
+For example, I run tests by running:
+
+    php index.php tests
+    
+On the command line. Note the filename shouldn't have an extension.
+
+Just to clarify, if your path looked something like `/path/to/my/file/where/i/call/the/lisp/function`, that's how you could play with it. Or, if you wanted you could simply include index.php from this repo, and use "lisp()" anywhere after that.
