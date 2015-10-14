@@ -1,9 +1,9 @@
 # phlp
 phlp - a toy lisp in PHP
 
-Inspired by [Lisp in Your Language](http://danthedev.com/2015/09/09/lisp-in-your-language/), where the author writes a program to pass arrays as list-like structures in JavaScript, I decided to do something similar in PHP.
+Inspired by [Lisp in Your Language](http://danthedev.com/2015/09/09/lisp-in-your-language/), where the author writes a program to pass arrays as list-like structures in JavaScript, I decided to do something similar in PHP, as a challenge to try to learn a little bit more about LISP-like dialects.
 
-Since all varaibles are strings in this language, you may end up worrying about scope, but in case its not clear -- never, ever use in production :)
+In case its not entirely clear, much like its inspiration, this is a toy used for learning -- never, ever use in production. :)
 
 The syntax ends up looking like this:
 
