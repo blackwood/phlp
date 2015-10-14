@@ -70,4 +70,4 @@ For example, I run tests by running:
     
 On the command line. Note the filename shouldn't have an extension.
 
-Just to clarify, if your path looked something like `/path/to/my/file/where/i/call/the/lisp/function`, that's how you could play with it. Or, if you wanted you could simply include index.php from this repo, and use "lisp()" anywhere after that.
+Just to clarify, if your path looked something like `/path/to/my/file/where/i/call/the/lisp/function`, that's what you could pass in. Or, if you wanted you could simply include index.php from this repo in your code, and use "lisp()" anywhere after that.
