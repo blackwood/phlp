@@ -4,8 +4,12 @@ echo <<<EOT
 ------------------------------ PHLisP -----------------------------\n
 EOT;
 
-function array_args_and_function_builtin_or_defined($fn, $args) {
-	return $fn && array_filter($args, 'is_array') === $args || $fn === 'def';
+function fn_is_user_definition($fn, $args) {
+	return $fn && $fn === 'def';
+}
+
+function fn_args_are_arrays($fn, $args) {
+	$fn && array_filter($args, 'is_array') === $args;
 }
 
 function function_in_group($fn, $funcgroups) {
@@ -40,9 +44,6 @@ class Native {
 			'if' => function($condition, $success, $failure) {
 				$passed = lisp($condition);
 				return lisp($passed ? $success : $failure);
-			},
-			'def' => function() {
-				var_dump("foo");
 			}
 		);
 	}
@@ -117,7 +118,11 @@ function lisp($expression) {
 		return call_user_func_array($special[$fn], array_slice($expression, 1));
 	}
 
-	is_array($expression) && $args =	array_map(function($arg) use ($fn, $reducers) {
+	if (fn_is_user_definition($fn, $args)) {
+		return call_user_func_array($fn, array_slice($expression, 1));
+	}
+
+	is_array($expression) && $args = array_map(function($arg) use ($fn, $reducers) {
 		if (is_array($arg)) {
 			return lisp($arg);
 		} else {
@@ -128,16 +133,16 @@ function lisp($expression) {
 			}
 		}
 	}, array_slice($expression, count($fn)));
-
-	if (array_key_exists($fn, $reducers)) {
+  
+  if (fn_args_are_arrays($fn, $args)) {
+  	return call_user_func_array($fn, $args);
+  }
+	elseif (array_key_exists($fn, $reducers)) {
 		return array_reduce($args, $reducers[$fn]);
 	}
 	elseif (array_key_exists($fn, $funcs)) {
 		return call_user_func_array($funcs[$fn], $args);
 	}
-  elseif (array_args_and_function_builtin_or_defined($fn, $args)) {
-  	return call_user_func_array($fn, $args);
-  }
 	elseif ($fn) {
 		return array_map(function($arg) use ($fn) {
 			return call_user_func($fn, $arg);
@@ -150,32 +155,35 @@ function lisp($expression) {
 }
 
 // Concatenation
-// lisp(['var_dump', 
-// 	['.', 'foo', 'bar', 'baz']]);
+lisp(['var_dump', 
+	['.', 'foo', 'bar', 'baz']]);
 
 // Nested functions and arrays as "sequences" instead of forms
-// lisp(['var_dump', 'foo',[2,3,4], ['array_merge',[['+',9,10],2],[4,5,6]]]);
-// lisp(['var_dump', ['array_merge',[2],['array_merge',[3],[4],[5]]]]);
+lisp(['var_dump', 'foo',[2,3,4], ['array_merge',[['+',9,10],2],[4,5,6]]]);
+lisp(['var_dump', ['array_merge',[2],['array_merge',[3],[4],[5]]]]);
 
 // Multiplication, division, modulo, subtraction.
-// lisp(['var_dump', ['def', 'a', 4],
-// 	// ['+', 'a', 'a'],['*', 4, 4],
-// 	['=', ['/', 16, 'a'], 4],
-// 	['=', ['*', 2, 'a'], 8],
-// 	['=', ['-', 2, 'a'], -2],
-// 	['=', ['%', 17, 'a'], 1]]);
+lisp(['var_dump', ['def', 'a', 4],
+	['=', ['/', 16, 'a'], 4],
+	['=', ['*', 2, 'a'], 8],
+	['=', ['-', 2, 'a'], -2],
+	['=', ['%', 17, 'a'], 1]]);
 
 // Special form do
-// lisp(['do',
-// 	['var_dump', ['=', 5, ['+', 3, 2]]],
-// 	['var_dump', ['.', 'ba', 'na', 'na']]]);
+lisp(['do',
+	['var_dump', ['=', 5, ['+', 3, 2]]],
+	['var_dump', ['.', 'ba', 'na', 'na']]]);
 
 // Control flow.
-// lisp(['if', ['=', 4, 3],
-// 	['var_dump','yep'],
-// 	['var_dump','nope']]);
+lisp(['if', ['=', 4, 3],
+	['var_dump','yep'],
+	['var_dump','nope']]);
 
 lisp(['def', 'shout',
   		['fn', ['name', 'planet'],
     	['puts', 'planet', 'name']]],
     	['shout', 'hello', 'world']);
+
+lisp(['var_dump',
+	['def', 'b', 5],
+	['+', 1, b]]);
