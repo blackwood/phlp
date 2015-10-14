@@ -12,6 +12,13 @@ function is_closure($fn) {
   return is_object($fn) && ($fn instanceof Closure);
 }
 
+function has_known_signature_type($fn) {
+	$known = array(
+		'implode' => '_array',
+	);
+	return !empty($known[$fn]) ? $known[$fn] : false;
+}
+
 class Native {
 	
 	public static $def = array();
@@ -37,28 +44,29 @@ class Native {
 				return lisp($passed ? $success : $failure);
 			},
 			'def' => function($name, $value) {
-				$value = $value[0] === 'fn' ? lisp($value) : $value;
+				$value = !is_object($value) && $value[0] === 'fn' ? lisp($value) : $value;
 				self::def($name, $value);
 			},
 			'fn' => function() {
 				$args = func_get_args();
 				$signature = $args[0];
 				$body = array_slice($args, 1);
-				
+
 				return function() use ($signature, $body) {
 					$passed = func_get_args();
 					$named = array_combine($signature, $passed);
-					$result = [];
-					$iterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($body)); 
-					foreach ($iterator as $key => $val) {
-						if (!empty($named[$val])) {
-							$result[$key] = $named[$val];
-						} else {
-							$result[$key] = $val;
-						}
-					}
-					return lisp($result);
+					array_walk_recursive($body, function(&$val, $key) use ($named) {
+						$val = !empty($named[$val]) ? $named[$val] : $val;
+					});
+					return call_user_func('lisp', $body);
 				};
+			},
+			'defn' => function() {
+				$special = self::special();
+				$args = func_get_args();
+				$name = $args[0];
+				$value = call_user_func_array($special['fn'], array_slice($args, 1));
+				return call_user_func_array($special['def'], array($name, $value));
 			}
 		);
 	}
@@ -66,10 +74,16 @@ class Native {
 	public function funcs() {
 		return array(
 			'puts' => function() {
-				printf(func_get_args() . "\n");
+				printf(implode("\n", func_get_args()) . "\n");
 			},
 			'=' => function($a, $b) {
 				return $a === $b;
+			},
+			'>' => function($a, $b) {
+				return $a > $b;
+			},
+			'<' => function($a, $b) {
+				return $a < $b;
 			}
 		);
 	}
@@ -158,6 +172,9 @@ function lisp($expression) {
 	elseif ($fn && func_args_are_arrays($args)) {
   	return call_user_func_array($fn, $args);
 	}
+	elseif ($signature = has_known_signature_type($fn)) {
+		return call_user_func("call_user_func{$signature}", $fn, $args);
+	}
 	elseif ($fn) {
 		return array_map(function($arg) use ($fn) {
 			return call_user_func($fn, $arg);
@@ -199,9 +216,15 @@ function lisp($expression) {
 // 	['var_dump','yep'],
 // 	['var_dump','nope']]);
 
-lisp(['def', 'shout',
-  		['fn', ['name', 'planet'],
-    	['var_dump', 'planet', 'name']]]);
+// lisp(['def', 'greet',
+//   		['fn', ['planet', 'greeting'],
+//     	['puts', 'greeting', 'planet']]]);
 
-lisp(['shout','world','hello']);
+// lisp(['greet', 'world', 'hello']);
+
+lisp(['do', ['defn', 'yell', 
+		['greeting', 'planet'],
+		['puts', ['.', ['implode', ', ', ['strtoupper', 'greeting', 'planet']], '!!!']]],
+		
+		['yell', 'hello', 'world']]);
 
