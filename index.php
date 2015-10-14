@@ -8,6 +8,10 @@ function func_args_are_arrays($args) {
 	return array_filter($args, 'is_array') === $args;
 }
 
+function is_closure($fn) {
+  return is_object($fn) && ($fn instanceof Closure);
+}
+
 class Native {
 	
 	public static $def = array();
@@ -33,7 +37,28 @@ class Native {
 				return lisp($passed ? $success : $failure);
 			},
 			'def' => function($name, $value) {
-				return self::def($name, $value);
+				$value = $value[0] === 'fn' ? lisp($value) : $value;
+				self::def($name, $value);
+			},
+			'fn' => function() {
+				$args = func_get_args();
+				$signature = $args[0];
+				$body = array_slice($args, 1);
+				
+				return function() use ($signature, $body) {
+					$passed = func_get_args();
+					$named = array_combine($signature, $passed);
+					$result = [];
+					$iterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($body)); 
+					foreach ($iterator as $key => $val) {
+						if (!empty($named[$val])) {
+							$result[$key] = $named[$val];
+						} else {
+							$result[$key] = $val;
+						}
+					}
+					return lisp($result);
+				};
 			}
 		);
 	}
@@ -93,10 +118,12 @@ function lisp($expression) {
 	$funcs 		= Native::funcs();
 
 	// only to check if first value IS a known function.
-	$accepted = array_merge($special, $reducers, $funcs);
+	$accepted = array_merge($special, $reducers, $funcs, Native::getdef());
 
 	if (is_string($expression[0]) && // short circuit if not string.
-		(function_exists($expression[0]) || array_key_exists($expression[0], $accepted))) {
+		(function_exists($expression[0]) || 
+			array_key_exists($expression[0], $accepted) ||
+			array_key_exists($expression[0], Native::getdef()))) {
 		$fn = $expression[0];
 	}
 
@@ -109,7 +136,6 @@ function lisp($expression) {
 	}
 
 	is_array($expression) && $args = array_map(function($arg) use ($fn, $reducers) {
-		// var_dump($arg);
 		if (is_array($arg)) {
 			return lisp($arg);
 		}
@@ -120,9 +146,11 @@ function lisp($expression) {
 		}
 	}, array_slice($expression, count($fn)));
   
-
 	if (array_key_exists($fn, $reducers)) {
 		return array_reduce($args, $reducers[$fn]);
+	}
+	elseif (array_key_exists($fn, Native::getdef()) && $dfs = Native::getdef()) {
+		return call_user_func_array($dfs[$fn], $args);
 	}
 	elseif (array_key_exists($fn, $funcs)) {
 		return call_user_func_array($funcs[$fn], $args);
@@ -142,35 +170,38 @@ function lisp($expression) {
 }
 
 // Concatenation
-lisp(['var_dump', 
-	['.', 'foo', 'bar', 'baz']]);
+// lisp(['var_dump', 
+// 	['.', 'foo', 'bar', 'baz']]);
 
 // Nested functions and arrays as "sequences" instead of forms
-lisp(['var_dump', 'foo',[2,3,4], ['array_merge',[['+',9,10],2],[4,5,6]]]);
-lisp(['var_dump', ['array_merge',[2],['array_merge',[3],[4],[5]]]]);
+// lisp(['var_dump', 'foo',[2,3,4], ['array_merge',[['+',9,10],2],[4,5,6]]]);
+// lisp(['var_dump', ['array_merge',[2],['array_merge',[3],[4],[5]]]]);
+
+// Variables
+// lisp(['var_dump',
+// 	['def', 'b', 5],
+// 	['+', 1, 'b']]);
 
 // Multiplication, division, modulo, subtraction.
-lisp(['var_dump', ['def', 'a', 4],
-	['=', ['/', 16, 'a'], 4],
-	['=', ['*', 2, 'a'], 8],
-	['=', ['-', 2, 'a'], -2],
-	['=', ['%', 17, 'a'], 1]]);
+// lisp(['var_dump', ['def', 'a', 4],
+// 	['=', ['/', 16, 'a'], 4],
+// 	['=', ['*', 2, 'a'], 8],
+// 	['=', ['-', 2, 'a'], -2],
+// 	['=', ['%', 17, 'a'], 1]]);
 
 // Special form do
-lisp(['do',
-	['var_dump', ['=', 5, ['+', 3, 2]]],
-	['var_dump', ['.', 'ba', 'na', 'na']]]);
+// lisp(['do',
+// 	['var_dump', ['=', 5, ['+', 3, 2]]],
+// 	['var_dump', ['.', 'ba', 'na', 'na']]]);
 
 // Control flow.
-lisp(['if', ['=', 4, 3],
-	['var_dump','yep'],
-	['var_dump','nope']]);
+// lisp(['if', ['=', 4, 3],
+// 	['var_dump','yep'],
+// 	['var_dump','nope']]);
 
 lisp(['def', 'shout',
   		['fn', ['name', 'planet'],
-    	['puts', 'planet', 'name']]],
-    	['shout', 'hello', 'world']);
+    	['var_dump', 'planet', 'name']]]);
 
-lisp(['var_dump',
-	['def', 'b', 5],
-	['+', 1, b]]);
+lisp(['shout','world','hello']);
+
