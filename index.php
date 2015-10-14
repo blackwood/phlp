@@ -4,21 +4,8 @@ echo <<<EOT
 ------------------------------ PHLisP -----------------------------\n
 EOT;
 
-function fn_is_user_definition($fn, $args) {
-	return $fn && $fn === 'def';
-}
-
-function fn_args_are_arrays($fn, $args) {
-	$fn && array_filter($args, 'is_array') === $args;
-}
-
-function function_in_group($fn, $funcgroups) {
-	foreach ($funcgroups as $funcgroup) {
-		if (array_key_exists($fn, $funcgroup)) {
-			return $funcgroup;
-		}
-	}
-	return false;
+function func_args_are_arrays($args) {
+	return array_filter($args, 'is_array') === $args;
 }
 
 class Native {
@@ -44,6 +31,9 @@ class Native {
 			'if' => function($condition, $success, $failure) {
 				$passed = lisp($condition);
 				return lisp($passed ? $success : $failure);
+			},
+			'def' => function($name, $value) {
+				return self::def($name, $value);
 			}
 		);
 	}
@@ -94,10 +84,6 @@ class Native {
 
 }
 
-function def($name, $value) {
-	Native::def($name, $value);
-}
-
 function lisp($expression) {
 
 	$special 	= Native::special(); 
@@ -118,30 +104,31 @@ function lisp($expression) {
 		return call_user_func_array($special[$fn], array_slice($expression, 1));
 	}
 
-	if (fn_is_user_definition($fn, $args)) {
+	if ($fn === 'def') {
 		return call_user_func_array($fn, array_slice($expression, 1));
 	}
 
 	is_array($expression) && $args = array_map(function($arg) use ($fn, $reducers) {
+		// var_dump($arg);
 		if (is_array($arg)) {
 			return lisp($arg);
+		}
+		elseif (array_key_exists($arg, Native::getdef()) && $dfs = Native::getdef()) {
+			return $dfs[$arg];
 		} else {
-			if (array_key_exists($arg, Native::getdef()) && $dfs = Native::getdef()) {
-				return $dfs[$arg];
-			} else {
-				return $arg;
-			}
+			return $arg;
 		}
 	}, array_slice($expression, count($fn)));
   
-  if (fn_args_are_arrays($fn, $args)) {
-  	return call_user_func_array($fn, $args);
-  }
-	elseif (array_key_exists($fn, $reducers)) {
+
+	if (array_key_exists($fn, $reducers)) {
 		return array_reduce($args, $reducers[$fn]);
 	}
 	elseif (array_key_exists($fn, $funcs)) {
 		return call_user_func_array($funcs[$fn], $args);
+	}
+	elseif ($fn && func_args_are_arrays($args)) {
+  	return call_user_func_array($fn, $args);
 	}
 	elseif ($fn) {
 		return array_map(function($arg) use ($fn) {
