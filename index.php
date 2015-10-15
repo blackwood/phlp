@@ -185,7 +185,3 @@ class Native {
 	}
 
 }
-
-$file = !empty($argv[1]) ? $argv[1] . '.php' : '';
-
-include $file;
