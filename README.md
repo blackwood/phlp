@@ -60,14 +60,13 @@ The syntax ends up looking like this:
 ]);
 ```
 
-### Running it
+### How to use
 
-Right now, not using composer or anything like that, so you have to simply pass the filename you want to interpret in as an argument. 
+Include `index.php` in your script, and invoke using the `lisp()` function call.
 
-For example, I run tests by running:
+An alternative usage is the repl, which loads an interactive shell with the script preloaded.
 
-    php index.php tests
+You can run this "repl" from the root of the repo like so:
+
+    ./bin/repl
     
-On the command line. Note the filename shouldn't have an extension.
-
-Just to clarify, if your path looked something like `/path/to/my/file/where/i/call/the/lisp/function`, that's what you could pass in. Or, if you wanted you could simply include index.php from this repo in your code, and use "lisp()" anywhere after that.
