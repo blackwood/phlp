@@ -34,7 +34,7 @@ function lisp($expression) {
     if (is_array($arg)) {
       return lisp($arg);
     }
-    elseif (array_key_exists($arg, Native::getdef()) && $dfs = Native::getdef()) {
+    elseif (is_string($arg) && array_key_exists($arg, Native::getdef()) && $dfs = Native::getdef()) {
       return $dfs[$arg];
     } else {
       return $arg;
@@ -77,7 +77,9 @@ function is_closure($fn) {
 
 function has_known_signature_type($fn) {
   $known = array(
+    'abs' => '_array',
     'implode' => '_array',
+
   );
   return !empty($known[$fn]) ? $known[$fn] : false;
 }

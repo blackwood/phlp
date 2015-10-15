@@ -1,39 +1,46 @@
-<?php lisp(['do',
+<?php 
 
+include './index.php';
+
+lisp(['do',
+
+['puts', "\nReducible concatenation"],
+['var_dump',
+	"['.', 'foo', 'bar', 'baz'] === 'foobarbaz'",
+	['=', 'foobarbaz', ['.', 'foo', 'bar', 'baz']]],
+
+['puts', "\nArray Merge with nested functions"],
 ['var_dump', 
-	['.', 'foo', 'bar', 'baz']],
+	"['array_merge',[['+',9,10],2],[4,5,6]] === [19,2,4,5,6]",
+	['=', [19,2,4,5,6], ['array_merge',[['+',9,10],2],[4,5,6]]]],
 
-['var_dump', 'foo',[2,3,4], ['array_merge',[['+',9,10],2],[4,5,6]]],
-['var_dump', ['array_merge',[2],['array_merge',[3],[4],[5]]]],
+['puts', "\nArray Merge with nested functions II"],
+['var_dump', 
+	['array_merge',[2],['array_merge',[3],[4],[5]]]],
 
+['puts', "\nDefining variables"],
 ['var_dump',
 	['def', 'b', 5],
-	['+', 1, 'b']],
+	"['def', 'b', 5]",
+	"['+', 1, 'b'] === 6",
+	['=', 6, ['+', 1, 'b']]],
 
+['puts', "\nBasic Maths"],
 ['var_dump', ['def', 'a', 4],
 	['=', ['/', 16, 'a'], 4],
 	['=', ['*', 2, 'a'], 8],
 	['=', ['-', 2, 'a'], -2],
 	['=', ['%', 17, 'a'], 1]],
 
-['do',
-	['var_dump', ['=', 5, ['+', 3, 2]]],
-	['var_dump', ['.', 'ba', 'na', 'na']]],
+['puts', "\nControl Flow"],
+['var_dump', ['=', 'nope', ['if', ['=', 4, 3],
+	['current', ['yep']],
+	['current', ['nope']]]]],
 
-['if', ['=', 4, 3],
-	['var_dump','yep'],
-	['var_dump','nope']],
-
-['def', 'greet',
-	['fn', ['planet', 'greeting'],
-	['puts', 'greeting', 'planet']]],
-
-['greet', 'world', 'hello'],
-
+['puts', "\nDefine a function"],
 ['defn', 'yell', 
 	['greeting', 'planet'],
-	['puts', ['.', ['implode', ', ', ['strtoupper', 'greeting', 'planet']], '!!!']]],
-		
-['yell', 'hello', 'world'],
+	['.', ['implode', ', ', ['strtoupper', 'greeting', 'planet']], '!!!']],
+['var_dump', ['=', 'HELLO, WORLD!!!', ['current', ['yell', 'hello', 'world']]]],
 
 ]);
