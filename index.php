@@ -1,16 +1,26 @@
 <?php
 
-echo <<<EOT
------------------------------- PHLisP -----------------------------\n
-EOT;
+require_once __DIR__ . '/vendor/autoload.php';
 
-function lisp($expression) {
+use Colors\Color;
+
+$c = new Color();
+
+function intro() {
+echo <<<EOT
+------------------------------ PHLP -----------------------------\n
+EOT;
+}
+
+function phlp($expression) {
 
   $special  = Native::special(); 
 
   $reducers = Native::reducers();
 
   $funcs    = Native::funcs();
+
+  $fn       = null;
 
   // only to check if first value IS a known function.
   $accepted = array_merge($special, $reducers, $funcs, Native::getdef());
@@ -32,7 +42,7 @@ function lisp($expression) {
 
   is_array($expression) && $args = array_map(function($arg) use ($fn, $reducers) {
     if (is_array($arg)) {
-      return lisp($arg);
+      return phlp($arg);
     }
     elseif (is_string($arg) && array_key_exists($arg, Native::getdef()) && $dfs = Native::getdef()) {
       return $dfs[$arg];
@@ -88,28 +98,28 @@ class Native {
   
   public static $def = array();
 
-  public function def($name, $value) {
+  public static function def($name, $value) {
     self::$def[$name] = $value;
   }
 
-  public function getdef() { 
+  public static function getdef() { 
     return self::$def;
   }
 
-  public function special() {   
+  public static function special() {   
     return array(
       'do' => function() {
         $exprs = func_get_args();
         return array_reduce($exprs, function($_, $expr) {
-          return lisp($expr);
+          return phlp($expr);
         }, null);
       },
       'if' => function($condition, $success, $failure) {
-        $passed = lisp($condition);
-        return lisp($passed ? $success : $failure);
+        $passed = phlp($condition);
+        return phlp($passed ? $success : $failure);
       },
       'def' => function($name, $value) {
-        $value = !is_object($value) && $value[0] === 'fn' ? lisp($value) : $value;
+        $value = !is_object($value) && $value[0] === 'fn' ? phlp($value) : $value;
         self::def($name, $value);
       },
       'fn' => function() {
@@ -123,7 +133,7 @@ class Native {
           array_walk_recursive($body, function(&$val, $key) use ($named) {
             $val = !empty($named[$val]) ? $named[$val] : $val;
           });
-          return call_user_func('lisp', $body);
+          return call_user_func('phlp', $body);
         };
       },
       'defn' => function() {
@@ -136,7 +146,7 @@ class Native {
     );
   }
 
-  public function funcs() {
+  public static function funcs() {
     return array(
       'puts' => function() {
         printf(implode("\n", func_get_args()) . "\n");
@@ -153,7 +163,7 @@ class Native {
     );
   }
 
-  public function reducers() {
+  public static function reducers() {
     return array(
       '+' => function($a, $b) {
         $a += $b;
@@ -187,3 +197,11 @@ class Native {
   }
 
 }
+
+// function repl() {
+//   $chomp = cli\prompt("phlp ", false, $marker = '> ');
+//   var_dump(phlp($chomp));
+//   repl();
+// }
+
+// repl();

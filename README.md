@@ -8,7 +8,7 @@ In case its not entirely clear, much like its inspiration, this is a toy used fo
 The syntax ends up looking like this:
 
 ```
-<?php lisp(['do', /* do will evaluate many statements in sequence */
+<?php phlp(['do', /* do will evaluate many statements in sequence */
 
 /* math */
 ['-', 5, 3],
@@ -62,7 +62,7 @@ The syntax ends up looking like this:
 
 ### How to use
 
-Include `index.php` in your script, and invoke using the `lisp()` function call.
+Include `index.php` in your script, and invoke using the `phlp()` function call.
 
 An alternative usage is the repl, which loads an interactive shell with the script preloaded.
 

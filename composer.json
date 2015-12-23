@@ -1,0 +1,6 @@
+{
+    "require": {
+        "kevinlebrun/colors.php": "^0.4.1",
+        "wp-cli/php-cli-tools": "^0.10.5"
+    }
+}

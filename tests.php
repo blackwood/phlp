@@ -2,7 +2,7 @@
 
 include './index.php';
 
-lisp(['do',
+phlp(['do',
 
 ['puts', "\nReducible concatenation"],
 ['var_dump',
