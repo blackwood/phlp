@@ -151,47 +151,47 @@ class Native {
       'puts' => function() {
         printf(implode("\n", func_get_args()) . "\n");
       },
-      '=' => function($a, $b) {
-        return $a === $b;
+      '=' => function($initial, $compare) {
+        return $initial === $compare;
       },
-      '>' => function($a, $b) {
-        return $a > $b;
+      '>' => function($initial, $compare) {
+        return $initial > $compare;
       },
-      '<' => function($a, $b) {
-        return $a < $b;
+      '<' => function($initial, $compare) {
+        return $initial < $compare;
       }
     );
   }
 
   public static function reducers() {
     return array(
-      '+' => function($a, $b) {
-        $a += $b;
-        return $a;
+      '+' => function($carry, $item) {
+        $carry += $item;
+        return $carry;
       },
-      '-' => function($a, $b) {
-        if ($a === null) return $b;
-        $a -= $b;
-        return $a;
+      '-' => function($carry, $item) {
+        if ($carry === null) return $item;
+        $carry -= $item;
+        return $carry;
       },
-      '*' => function($a, $b) {
-        if ($a === null) $a = 1;
-        $a *= $b;
-        return $a;
+      '*' => function($carry, $item) {
+        if ($carry === null) $carry = 1;
+        $carry *= $item;
+        return $carry;
       },
-      '/' => function($a, $b) {
-        if ($a === null) return $b;
-        $a /= $b;
-        return $a;
+      '/' => function($carry, $item) {
+        if ($carry === null) return $item;
+        $carry /= $item;
+        return $carry;
       },
-      '.' => function($a, $b) {
-        $z = "{$a}{$b}";
-        return $z;
+      '.' => function($carry, $item) {
+        $final = "{$carry}{$item}";
+        return $final;
       },
-      '%' => function($a, $b) {
-        if ($a === null) return $b;
-        $a %= $b;
-        return $a;
+      '%' => function($carry, $item) {
+        if ($carry === null) return $item;
+        $carry %= $item;
+        return $carry;
       }
     );
   }
